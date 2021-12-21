@@ -111,7 +111,7 @@ def push_json_data_to_fifo_sqs_queue():
         for rec in recordDir['Records']:
             print(rec)
             fifo_queue_response = sqs.send_message(
-                QueueUrl="https://sqs.us-east-1.amazonaws.com/421788775798/boto3-queue.fifo",
+                QueueUrl="<SQS QUEUE ID>",
                 MessageBody=json.dumps(rec),
                 MessageGroupId = str(groupId),
                 MessageDeduplicationId = str(uuid.uuid4())
