@@ -77,6 +77,54 @@ def push_data_to_fifo_sqs_queue():
     else:
         print(fifo_queue_response['MessageId'])
 
+def push_json_data_to_fifo_sqs_queue():
+    try:
+        dictObj = {}
+        allRecords = []
+        fields =['Title', 'Id', 'ProcessYear', 'SequenceId', 'Code', 'Name', 'InfoType', 'CustId', 'RecordDate', 'RecordReference']
+        with open("data.txt") as fh:
+            recordCount = 1
+            for line in fh:
+                # reads each line and trims of extra the spaces and gives only the valid words
+                description = list( line.strip().split(None, 10))
+                # print(description)
+                recordSequence = "Records"
+                fieldCount = 0
+                innerDictObj = {}
+                while fieldCount<len(fields):
+                    innerDictObj[fields[fieldCount]]= description[fieldCount]
+                    fieldCount = fieldCount + 1
+                # appending the record of each record to main directory
+                allRecords.append(innerDictObj)
+                recordCount = recordCount + 1
+            dictObj[recordSequence] = allRecords
+        # creating json file
+        out_file = open("test1.json", "w")
+        jsonData = json.dump(dictObj, out_file, indent = 4)
+        print(jsonData)
+        out_file.close()
+
+        # Reading the newly created json file and eval the values and push to fifo queue one by one
+        readFile = open('test1.json')
+        recordDir = json.load(readFile)
+        groupId = uuid.uuid4()
+        for rec in recordDir['Records']:
+            print(rec)
+            fifo_queue_response = sqs.send_message(
+                QueueUrl="https://sqs.us-east-1.amazonaws.com/421788775798/boto3-queue.fifo",
+                MessageBody=json.dumps(rec),
+                MessageGroupId = str(groupId),
+                MessageDeduplicationId = str(uuid.uuid4())
+            )
+        readFile.close()
+            
+    except ClientError:
+        logger.exception("Unable to push message to FIFO queue.")
+        raise
+    else:
+        print("Json file created successfully.")
+        #print(fifo_queue_response['MessageId'])
+
 
 # Calling function to send data to sqs queue
 # get_sqs_queues()
@@ -85,4 +133,6 @@ def push_data_to_fifo_sqs_queue():
 # push_data_to_sqs_queue()
 
 # create_new_fifo_sqs()
-push_data_to_fifo_sqs_queue()
+# push_data_to_fifo_sqs_queue()
+
+push_json_data_to_fifo_sqs_queue()
