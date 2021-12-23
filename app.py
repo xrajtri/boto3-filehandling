@@ -2,6 +2,7 @@ import boto3
 import json
 import logging
 import uuid
+import xml.etree.cElementTree as e
 from botocore.exceptions import ClientError
 
 sqs = boto3.client("sqs", region_name="us-east-1")
@@ -125,6 +126,39 @@ def push_json_data_to_fifo_sqs_queue():
         print("Json file created successfully.")
         #print(fifo_queue_response['MessageId'])
 
+def convert_json_to_xml():
+    try:
+        print("function - Converting json data to xml.")
+        # Reading json file first
+        with open("test1.json") as jsonData:
+            data = json.load(jsonData)
+            # create XML root
+            rootElement = e.Element("xmlData")
+            # create sub element
+            msgData = e.SubElement(rootElement,"messageData")
+            msgDataInfo = e.SubElement(msgData,"messageDataInfo")
+            # create individual elements from the array
+            for indRec in data['Records']:
+                temp = e.SubElement(msgDataInfo,"Record"+indRec["Id"])
+                e.SubElement(temp,"Title").text = indRec["Title"]
+                e.SubElement(temp,"Id").text = indRec["Id"]
+                e.SubElement(temp,"ProcessYear").text = indRec["ProcessYear"]
+                e.SubElement(temp,"SequenceId").text = indRec["SequenceId"]
+                e.SubElement(temp,"Code").text = indRec["Code"]
+                e.SubElement(temp,"Name").text = indRec["Name"]
+                e.SubElement(temp,"InfoType").text = indRec["InfoType"]
+                e.SubElement(temp,"CustId").text = indRec["CustId"]
+                e.SubElement(temp,"RecordDate").text = indRec["RecordDate"]
+                e.SubElement(temp,"RecordReference").text = indRec["RecordReference"]
+            # building xml tree
+            xtree = e.ElementTree(msgData)
+            xtree.write("xmlData.xml")
+    except ClientError:
+        logger.exception("Problem occured while converting data to xml.")
+        raise
+    else:
+        print("XML data has been generated successfully.")
+
 
 # Calling function to send data to sqs queue
 # get_sqs_queues()
@@ -135,4 +169,5 @@ def push_json_data_to_fifo_sqs_queue():
 # create_new_fifo_sqs()
 # push_data_to_fifo_sqs_queue()
 
-push_json_data_to_fifo_sqs_queue()
+# push_json_data_to_fifo_sqs_queue()
+convert_json_to_xml()
